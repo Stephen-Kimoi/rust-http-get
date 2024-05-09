@@ -19,3 +19,6 @@ The other section is for handling the HTTP response. If the request is succesful
 
 ### ``transform`` Function: 
 This function takes in the HTTP response as input and returns the transformed data. 
+
+## Response: 
+![alt text](image-4.png)
