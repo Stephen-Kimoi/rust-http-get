@@ -18,12 +18,12 @@ struct Context {
 #[ic_cdk::update] 
 async fn get_btc_usd_price() -> String {
     let url = format!("https://api.coinbase.com/v2/exchange-rates?currency=BTC"); 
-    let host = format!("https://api.coinbase.com/"); 
+    // let host = format!("https://api.coinbase.com/"); 
 
     let request_headers = vec![
         HttpHeader {
             name: "Host".to_string(), 
-            value: format!("{host}:433")
+            value: "api.coinbase.com".to_string(),
         }, 
         HttpHeader {
             name: "User-Agent".to_string(), 
@@ -45,6 +45,7 @@ async fn get_btc_usd_price() -> String {
             }), 
             context: vec![]
         }),  
+        // transform: Some(TransformContext::new(transform, sercer_json::to_vec(&context).unwrap())), 
     }; 
 
     // Send the request 
@@ -56,8 +57,15 @@ async fn get_btc_usd_price() -> String {
     match response {
         Ok((HttpResponse { body, .. },)) => {
             let body_str = String::from_utf8(body).unwrap(); 
-            // return the body string 
-            body_str 
+
+            // Parse the JSON string into serde_json::Value
+            let parsed: Value = serde_json::from_str(&body_str).unwrap(); 
+
+            // Access the fields you're interested in 
+            let kes = parsed["data"]["rates"]["KES"].as_str().unwrap(); 
+            let usd = parsed["data"]["rates"]["KES"].as_str().unwrap();   
+
+            format!("KES: {}, USD: {} ", kes, usd)
         }
         // Ok(HttpResponse::Fail { body, .. }) => {
         //     format!("Request failed with body: {:?}", body)
@@ -68,6 +76,50 @@ async fn get_btc_usd_price() -> String {
         }
     }
     
+}
+
+#[ic_cdk::query]
+fn transform(raw: TransformArgs) -> HttpResponse { 
+    let headers = vec![
+        HttpHeader {
+            name:  "Content-Security-Policy".to_string(),
+            value: "default-src 'self'".to_string(),
+        }, 
+        HttpHeader {
+            name: "Referrer-Policy".to_string(),
+            value: "strict-origin".to_string(),
+        }, 
+        HttpHeader {
+            name: "Permissions-Policy".to_string(),
+            value: "geolocation=(self)".to_string(),
+        },
+        HttpHeader {
+            name: "Strict-Transport-Security".to_string(),
+            value: "max-age=63072000".to_string(),
+        },
+        HttpHeader {
+            name: "X-Frame-Options".to_string(),
+            value: "DENY".to_string(),
+        },
+        HttpHeader {
+            name: "X-Content-Type-Options".to_string(),
+            value: "nosniff".to_string(),
+        },
+    ]; 
+
+    let mut res = HttpResponse {
+        status: raw.response.status.clone(), 
+        body: raw.response.body.clone(), 
+        headers
+    }; 
+
+    if res.status == 200u64 {
+        res.body = raw.response.body; 
+    } else {
+        ic_cdk::api::print(format!("Received an error from coinbase: err = {:?}", raw));
+    }
+
+    res 
 }
 
 ic_cdk::export_candid!();
