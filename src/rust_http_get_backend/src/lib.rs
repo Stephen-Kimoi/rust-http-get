@@ -18,7 +18,6 @@ struct Context {
 #[ic_cdk::update] 
 async fn get_btc_usd_price() -> String {
     let url = format!("https://api.coinbase.com/v2/exchange-rates?currency=BTC"); 
-    // let host = format!("https://api.coinbase.com/"); 
 
     let request_headers = vec![
         HttpHeader {
@@ -63,13 +62,11 @@ async fn get_btc_usd_price() -> String {
 
             // Access the fields you're interested in 
             let kes = parsed["data"]["rates"]["KES"].as_str().unwrap(); 
-            let usd = parsed["data"]["rates"]["KES"].as_str().unwrap();   
+            let usd = parsed["data"]["rates"]["USD"].as_str().unwrap();   
 
             format!("KES: {}, USD: {} ", kes, usd)
         }
-        // Ok(HttpResponse::Fail { body, .. }) => {
-        //     format!("Request failed with body: {:?}", body)
-        // } 
+
         Err(err) => {
             // Handling the error 
             format!("Request error: {:?}", err)
